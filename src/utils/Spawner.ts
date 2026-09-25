@@ -57,6 +57,8 @@ export function Spawner() {
   const livingHaulerCoreRule = _.filter(Game.creeps, (c: Creep) => c.memory.role === CREEPS_CONFIG.haulerCore.role).length < CREEPS_CONFIG.haulerCore.count
   const livingHaulerLocalRule = _.filter(Game.creeps, (c: Creep) => c.memory.role === CREEPS_CONFIG.haulerLocal.role).length < CREEPS_CONFIG.haulerLocal.count
 
+  console.log(livingRemoteHauler.length, GetPowersBankRemotes().length)
+
   //    If exists flags
   if (livingHaulerCoreRule) {
     const role = CREEPS_CONFIG.haulerCore.role
@@ -153,12 +155,10 @@ export function Spawner() {
     if (result !== OK) console.log(`Error al spawnear el ${role} con: ${result}`)
   } else if (livingRemoteHauler.length < GetPowersBankRemotes().length) {
     const role = "remoteHauler"; // Usa el casing exacto de tus types
-
-    // No asignar un container que ya tenga un remoteHauler vivo apuntándole --
-    // cada power bank remoto necesita el suyo propio, nunca compartido.
     const claimedContainerIds = new Set(
         livingRemoteHauler.map((c: Creep) => c.memory.targetContainerId).filter(Boolean)
     );
+
     const freeContainer = GetPowersBankRemotes().find(c => !claimedContainerIds.has(c.id));
     if (!freeContainer) return;
 
@@ -166,6 +166,8 @@ export function Spawner() {
     // para mover toda su producción en su propio ciclo de ida y vuelta, más
     // 10% de margen -- no el mismo body fijo para todas.
     const bodyToSpawn = remoteHaulerBodyFor(spawn.pos, freeContainer.pos, freeContainer.room);
+    console.log(bodyToSpawn)
+
     const cost = bodyToSpawn.reduce((sum, part) => sum + BODYPART_COST[part], 0);
     if (getSpawnEnergyAvailable(spawn) < cost) return;
 

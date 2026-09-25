@@ -6,15 +6,10 @@ import { retireToSpawn, shouldRetire } from "./services/retire";
 export default {
     run(creep: Creep): void {
         const hauler = creep as RemoteHaulerCreep;
-
-        // Inicializa su cuarto base si no lo tiene guardado
         if (!hauler.memory.homeRoom) {
             hauler.memory.homeRoom = hauler.room.name;
         }
 
-        // Otro remoteHauler vivo ya tiene mi mismo container asignado (ej:
-        // sobrantes de un bug de spawn viejo) -- no tiene sentido que los dos
-        // compitan por la misma mina, uno se recicla.
         if (shouldRetire(hauler)) {
             retireToSpawn(hauler);
             return;

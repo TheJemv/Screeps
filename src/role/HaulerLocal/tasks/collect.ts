@@ -3,10 +3,26 @@ import ContainerAssigner from '../managers/ContainerAssigner';
 import getSortedContainers from '../utils/getSortedContainers'; // Importamos EnergySource
 
 export function runCollectTask(creep: CreepHaulerLocal): void {
-
-  const creepCapacity = creep.store.getCapacity(RESOURCE_ENERGY);
+  // ---------------------------------------------------------------------------
+  // 0. VERIFICACIÓN DE INTERCEPTACIÓN ACTIVA (Si ya me comprometí a un relevo)
+  // ---------------------------------------------------------------------------
+  if(creep.memory.relayTarget) {
+    const targetAlly = Game.getObjectById(creep.memory.relayTarget) as CreepHaulerLocal
+    if (targetAlly && targetAlly.memory.state === "DEPOSITING" && targetAlly.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+      if (creep.pos.isNearTo(targetAlly)) {
+        delete creep.memory.relayTarget
+      } else {
+        creep.moveTo(targetAlly, { visualizePathStyle: { stroke: "#00ff00", lineStyle: "dashed" } });
+        creep.say('🎯 Interceptando');
+        return
+      }
+    } else {
+      delete creep.memory.relayTarget;
+    }
+  }
 
   // 1. Cambiamos el tipado para que acepte tanto contenedores como recursos del suelo
+  const creepCapacity = creep.store.getCapacity(RESOURCE_ENERGY);
   let targetSource: EnergySource | null = null;
 
   // ---------------------------------------------------------------------------
@@ -97,6 +113,7 @@ export function runCollectTask(creep: CreepHaulerLocal): void {
       })[0];
 
       if (furthestAlly) {
+        creep.memory.relayTarget = furthestAlly.id;
         creep.moveTo(furthestAlly, { visualizePathStyle: { stroke: "#00ff00", lineStyle: "dashed" } })
         creep.say('🤝 Relevo');
       }

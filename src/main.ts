@@ -48,22 +48,14 @@ const ROLES: Record<string, Role> = {
   HaulerLocal
 };
 
-// const SPAWN_PRIORITY = ["miner", "upgrader", "hauler", "builder", "repairer", "controllercreep", "attacker", "claim"];
-// const capitalize = (role: string) => role[0].toUpperCase() + role.slice(1);
 
 
 //  Loop
 export const loop = ErrorMapper.wrapLoop(() => {
   Spawner()
 
-  //  Towers (no son creeps, no pasan por el loop de Game.creeps)
   Tower.run();
-
-  //  Reparte los builders entre construction sites según cuánto le falta a
-  //  cada uno -- una vez por tick, no por creep.
   assignBuilderTargets();
-
-  //  Posta Link -> Link (tampoco son creeps).
   runLinks();
 
   //  Creeps
