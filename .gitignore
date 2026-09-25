@@ -90,3 +90,9 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+screeps.sample.json
+feat/
+.vscode
+./.vscode
+./feat
