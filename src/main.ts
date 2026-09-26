@@ -1,6 +1,5 @@
 // import { CREEPS_CONFIG } from "config";
 
-import Attacker from "role/Attacker";
 import Builder from "role/Builder";
 import Claim from "role/Claim";
 import ControllerCreep from "role/ControllerCreep";
@@ -18,10 +17,14 @@ import RemoteHauler from "role/RemoteHauler";
 import Tower from "role/Tower";
 import { stats } from "utils/Stats";
 import { assignBuilderTargets } from "role/Builder/services/dispatch";
-import { runLinks } from "utils/Links";
 import LinkKeeper from "role/LinkKeeper";
 import HaulerCore from "role/HaulerCore";
 import HaulerLocal from "role/HaulerLocal";
+import LinkOperator from "role/LinkOperator";
+import LinkManager from "role/Link";
+
+import WarSystem from './war';
+
 // import trySpawn from "utils/TrySpawn";
 
 global.spawnHarvester = spawnHarvester
@@ -38,14 +41,15 @@ const ROLES: Record<string, Role> = {
   controllercreep: ControllerCreep,
   builder: Builder,
   repairer: Repairer,
-  attacker: Attacker,
   claim: Claim,
   harvester: Harvester,
   remoteHauler: RemoteHauler,
   linkKeeper: LinkKeeper,
 
   HaulerCore,
-  HaulerLocal
+  HaulerLocal,
+
+  LinkOperator
 };
 
 
@@ -56,7 +60,8 @@ export const loop = ErrorMapper.wrapLoop(() => {
 
   Tower.run();
   assignBuilderTargets();
-  runLinks();
+
+
 
   //  Creeps
   for (const name in Game.creeps) {
@@ -64,6 +69,10 @@ export const loop = ErrorMapper.wrapLoop(() => {
     const role = creep.memory.role && ROLES[creep.memory.role];
     if (role) role.run(creep);
   }
+
+  LinkManager.run()
+
+  WarSystem.run()
 
   // Limpia la memoria de creeps que ya murieron
   for (const name in Memory.creeps) {

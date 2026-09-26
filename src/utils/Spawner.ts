@@ -162,11 +162,11 @@ export function Spawner() {
     const freeContainer = GetPowersBankRemotes().find(c => !claimedContainerIds.has(c.id));
     if (!freeContainer) return;
 
-    // Body a medida para ESTA mina en particular: justo lo que hace falta
-    // para mover toda su producción en su propio ciclo de ida y vuelta, más
-    // 10% de margen -- no el mismo body fijo para todas.
-    const bodyToSpawn = remoteHaulerBodyFor(spawn.pos, freeContainer.pos, freeContainer.room);
-    console.log(bodyToSpawn)
+    const bodyToSpawn = [
+        CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+        CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY,
+        MOVE,  MOVE,  MOVE,  MOVE,  MOVE,  MOVE,  MOVE,  MOVE
+    ]
 
     const cost = bodyToSpawn.reduce((sum, part) => sum + BODYPART_COST[part], 0);
     if (getSpawnEnergyAvailable(spawn) < cost) return;

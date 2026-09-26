@@ -1,68 +1,113 @@
 import { GetPowerBankContainers } from "utils/GetPowerBank";
-import { RepairerCreep } from "../types";
+import { RepairerCreep } from "../types"; // Ajusta la ruta de types según tu proyecto
+import ReservationManager from "../managers/ReservationManager"; // <-- Importamos el Manager
 import { moveToRoad } from "utils/MoveToRoad";
 
-export function repairStructures(creep: RepairerCreep): void {
-    // 1. SI NO TIENE OBJETIVO: Buscar estructura más dañada en TODOS los cuartos visibles
-    // 1. SI NO TIENE OBJETIVO: Buscar estructura más dañada SOLO en nuestros cuartos
-    if (!creep.memory.targetId) {
-        const allStructures: AnyStructure[] = [];
+const MAX_WALL_HITS = 100000;
 
-        // Identificar nuestros territorios (Base + Cuartos con minas)
+export function repairStructures(creep: RepairerCreep): void {
+    // 1. SI NO TIENE OBJETIVO: Buscar estructura <= 50% que NO esté reservada
+    if (!creep.memory.targetId) {
         const cuartosNuestros = new Set<string>();
-        cuartosNuestros.add((creep.memory.homeRoom) || creep.room.name); // Tu cuarto principal
+        cuartosNuestros.add(creep.memory.homeRoom || creep.room.name);
 
         for (const flagName in Game.flags) {
             if (flagName.startsWith("Miner_")) {
-                cuartosNuestros.add(Game.flags[flagName].pos.roomName); // Tus cuartos remotos
+                cuartosNuestros.add(Game.flags[flagName].pos.roomName);
             }
         }
 
-        // Recorrer SOLO los cuartos que nos interesan (y donde tengamos visión)
+        // ---------------------------------------------------------------------
+        // 🔒 Usamos nuestro Manager para obtener la lista negra de IDs
+        // ---------------------------------------------------------------------
+        const reservedIds = ReservationManager.getReservedIds(creep);
+
+        let bestTarget: AnyStructure | null = null;
+        let highestPriority = 0;
+        let lowestHits = Infinity;
+
         for (const roomName of cuartosNuestros) {
-            if (Game.rooms[roomName]) {
-                allStructures.push(...Game.rooms[roomName].find(FIND_STRUCTURES));
+            if (!Game.rooms[roomName]) continue;
+
+            const structures = Game.rooms[roomName].find(FIND_STRUCTURES);
+
+            for (const s of structures) {
+                // 🛑 REGLA 1: Si otro repairer ya lo tiene reservado, lo saltamos
+                if (reservedIds.has(s.id)) continue;
+
+                const isWallOrRampart = s.structureType === STRUCTURE_WALL || s.structureType === STRUCTURE_RAMPART;
+                const maxHitsAllowed = isWallOrRampart ? MAX_WALL_HITS : s.hitsMax;
+
+                // 🛑 REGLA 2: Solo atendemos emergencias de la mitad hacia abajo (<= 50%)
+                if (s.hits > maxHitsAllowed * 0.5) continue;
+
+                let priority = 0;
+
+                switch (s.structureType) {
+                    case STRUCTURE_CONTAINER:
+                        priority = 4;
+                        break;
+                    case STRUCTURE_RAMPART:
+                        priority = 3;
+                        if (s.hits < 10000) priority = 5; // Emergencia crítica
+                        break;
+                    case STRUCTURE_EXTENSION:
+                    case STRUCTURE_SPAWN:
+                    case STRUCTURE_TOWER:
+                    case STRUCTURE_LINK:      // <-- ¡Agregado!
+                    case STRUCTURE_STORAGE:   // <-- Preparado para tu Storage
+                    case STRUCTURE_TERMINAL:  // <-- Preparado para RCL 6
+                        priority = 2;
+                        break;
+                    case STRUCTURE_ROAD:
+                    case STRUCTURE_WALL:
+                        priority = 1;
+                        break;
+                }
+
+                if (priority > 0) {
+                    if (priority > highestPriority || (priority === highestPriority && s.hits < lowestHits)) {
+                        highestPriority = priority;
+                        lowestHits = s.hits;
+                        bestTarget = s;
+                    }
+                }
             }
         }
 
-        const masDanado = (a: AnyStructure, b: AnyStructure) => a.hits - b.hits;
-
-        // Filtramos y ordenamos
-        const damaged =
-            allStructures.filter((s): s is StructureContainer => s.structureType === STRUCTURE_CONTAINER && s.hits <= s.hitsMax * 0.75).sort(masDanado)[0] ||
-            allStructures.filter((s): s is StructureExtension => s.structureType === STRUCTURE_EXTENSION && s.hits <= s.hitsMax * 0.75).sort(masDanado)[0] ||
-            allStructures.filter((s): s is StructureRoad => s.structureType === STRUCTURE_ROAD && s.hits <= s.hitsMax * 0.75).sort(masDanado)[0];
-
-        creep.memory.targetId = damaged ? damaged.id : undefined;
+        if (bestTarget) {
+            // Asignamos usando el manager
+            ReservationManager.assign(creep, bestTarget.id);
+        }
     }
 
-    // 2. EJECUTAR REPARACIÓN
+    // 2. EJECUTAR REPARACIÓN (Hasta llegar al 100%)
     if (creep.memory.targetId) {
-        // Game.getObjectById funciona a nivel global, sin importar en qué cuarto esté el objeto
-        const target = Game.getObjectById<StructureContainer | StructureExtension | StructureRoad>(creep.memory.targetId);
+        const target = Game.getObjectById<Structure>(creep.memory.targetId);
+        const isWallOrRampart = target && (target.structureType === STRUCTURE_WALL || target.structureType === STRUCTURE_RAMPART);
+        const hitLimit = isWallOrRampart ? MAX_WALL_HITS : (target ? target.hitsMax : 0);
 
-        // Si ya no existe, se reparó completamente, o perdimos visión del cuarto remoto
-        if (!target || target.hits === target.hitsMax) {
-            delete creep.memory.targetId;
+        // 🛑 REGLA 3: Si ya no existe o ya llegó a su máximo, lo liberamos
+        if (!target || target.hits >= hitLimit) {
+            ReservationManager.clear(creep);
             return;
         }
 
-        // Ejecuta la reparación. Si da ERR_NOT_IN_RANGE (está a más de 3 casillas de distancia)
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
             moveToRoad(creep, target, {
-                range: 3, // 💡 TIP: repair alcanza hasta 3 casillas, te ahorras caminar de más
-                visualizePathStyle: { stroke: '#00ff00' } // 🟢 VERDE: Reparando
+                range: 3,
+                visualizePathStyle: { stroke: '#00ff00' }
             });
         }
         return;
     }
 
-    // 3. STAND-BY: Si todo está reparado en todo el imperio, espera en el minero de casa
+    // 3. STAND-BY: Esperar sin bloquear
     const closestPowerBank = creep.pos.findClosestByRange(GetPowerBankContainers());
-    if (closestPowerBank && !creep.pos.inRangeTo(closestPowerBank, 1)) {
+    if (closestPowerBank && !creep.pos.inRangeTo(closestPowerBank, 3)) {
         moveToRoad(creep, closestPowerBank, {
-            range: 1,
-            visualizePathStyle: { stroke: '#777777' } // 🔘 GRIS: En espera
+            range: 3,
+            visualizePathStyle: { stroke: '#777777' }
         });
     }
 }

@@ -10,6 +10,7 @@ export default {
         // Transiciones de estado
         if (creep.memory.state === 'COLLECTING' && creep.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
             creep.memory.state = 'DEPOSITING';
+            delete creep.memory.relayTarget;
             creep.say('🚚 Storage');
         }
 
@@ -22,14 +23,14 @@ export default {
         if (creep.memory.state === 'COLLECTING') {
             runCollectTask(creep);
         } else {
-            const nearbyRelay = creep.pos.findInRange(FIND_MY_CREEPS, 1, {
+            const nearbyRelay: CreepHaulerLocal[] = creep.pos.findInRange(FIND_MY_CREEPS, 1, {
                 filter: (c) => {
                     const mem = c.memory as CreepHaulerLocalMemory;
                     return mem.role === 'HaulerLocal' && mem.state === 'COLLECTING';
                 }
             });
 
-            if (nearbyRelay.length > 0) {
+            if (nearbyRelay.length > 0 && nearbyRelay[0].memory.relayTarget === creep.id) {
                 creep.transfer(nearbyRelay[0], RESOURCE_ENERGY);
                 creep.say('📦 Toma!');
             } else {

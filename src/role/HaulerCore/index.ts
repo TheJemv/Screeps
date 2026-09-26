@@ -2,6 +2,7 @@ import CollectTask from './tasks/collect';
 import { CreepHaulerCore } from './types';
 import DepositTask from './tasks/deposit';
 import depositControllerContainer from './tasks/depositControllerContainer';
+import depositTower from './tasks/depositTower'; // <-- 1. Importamos la nueva función
 
 export default {
     run(creep: CreepHaulerCore): void {
@@ -27,14 +28,21 @@ export default {
         DepositTask(creep);
 
         if (!creep.memory.targets || creep.memory.targets.length === 0) {
-          const assigned = depositControllerContainer(creep);
-
-          if (assigned) {
+          const assignedController = depositControllerContainer(creep);
+          if (assignedController) {
             DepositTask(creep);
           } else {
-            if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-                creep.memory.state = 'COLLECTING';
-                creep.say("🔄 Refill");
+            const assignedTower = depositTower(creep);
+            if (assignedTower) {
+                DepositTask(creep);
+            } else {
+                if (creep.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+                    creep.memory.state = 'COLLECTING';
+                    creep.say("🔄 Refill");
+                } else {
+                    creep.say("💤 Idle");
+                }
+
             }
           }
         }

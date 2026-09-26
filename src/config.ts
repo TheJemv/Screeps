@@ -46,7 +46,7 @@ export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
         body: [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE] // 650, satura el source (5x2=10/tick)
     },
     builder: {
-        count: 0,   // 4 - Default
+        count: 4,   // 4 - Default
         // Menos WORK, más CARRY/MOVE que antes -- ahora que ControllerCreep se
         // encarga del upgrade fijo, Builder vuelve a ser más constructor/viajero
         // que fuente de progreso de controller.
@@ -65,7 +65,11 @@ export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
     },
     repairer: {
         count: 2,
-        body: [WORK, WORK, CARRY, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE] // 600
+        body: [
+            WORK, WORK, WORK, WORK, WORK, WORK, WORK, // 7 (700e) -> Repara 700 hits por tick
+            CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, // 8 (400e) -> Carga 400 de energía
+            MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE
+        ] // 600
     },
     claim: {
         count: 0,
@@ -82,13 +86,6 @@ export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
             CARRY, CARRY, CARRY,
             MOVE, MOVE, MOVE,
         ] // 400
-    },
-    attacker: {
-        count: 0,
-        // Un ATTACK menos que 1:1, y el sobrante en MOVE de más -- pensado para
-        // aguantar mejor el pantano de la sala enemiga (ahí la fatiga es 10/tick
-        // por parte en vez de 2, así que conviene ir sobrado de MOVE).
-        body: [ATTACK, ATTACK, ATTACK, ATTACK, ATTACK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE] // 800
     },
     remoteHauler: {
         count: 0,
@@ -109,8 +106,9 @@ export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
     haulerCore: {
         count: 2,
         body: [
-            CARRY, CARRY, CARRY, CARRY,
-            MOVE, MOVE
+            CARRY, CARRY, CARRY,
+            CARRY, CARRY, CARRY,
+            MOVE,  MOVE,  MOVE
         ],
         role: "HaulerCore"
     },

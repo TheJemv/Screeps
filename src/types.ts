@@ -28,7 +28,7 @@ declare global {
     sourceId?: Id<Source> | ""
     haulSource?: Id<StructureContainer>
     haulTarget?: Id<StructureContainer>
-    targetId?: Id<ConstructionSite | AnyStoreStructure | StructureContainer | StructureExtension | StructureRoad | StructureSpawn | Source | Ruin> | "";
+    targetId?: Id<AnyStructure>;
     targetType?: "ruin" | "source" | "build" | "spawn" | "upgrade";
     building?: boolean,
     targetContainerId?: string

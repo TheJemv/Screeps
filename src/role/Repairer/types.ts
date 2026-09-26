@@ -1,11 +1,11 @@
-export interface LocalRepairerMemory {
+export interface LocalRepairerMemory extends CreepMemory {
     role: 'repairer';
     working: boolean;
-    targetId?: Id<StructureContainer | StructureExtension | StructureRoad>;
+    targetId?: Id<AnyStructure>;
     targetContainerId?: Id<StructureContainer>;
     homeRoom: string
 }
 
 export type RepairerCreep = Omit<Creep, 'memory'> & {
-    memory: CreepMemory & LocalRepairerMemory;
+    memory: LocalRepairerMemory;
 };

@@ -1,57 +1,70 @@
-import { CreepHaulerLocal } from '../types';
+import { CreepHaulerLocal, EnergySource } from '../types';
 import { GetPowersBank } from 'utils/GetPowerBank';
 import { getControllerContainer } from 'utils/GetControllerContainer';
 
-// Creamos un tipo exportable que abarque ambos (Contenedor o Recurso del suelo)
-type EnergySource = StructureContainer | Resource;
-
 export default function(creep: CreepHaulerLocal): EnergySource[] {
-  const ControllerContainer = getControllerContainer(creep.room);
-  const powerBankContainers = GetPowersBank();
+  const room = creep.room;
+  const ControllerContainer = getControllerContainer(room);
 
-  // 1. Obtener Contenedores
-  const roomContainers = creep.room.find(FIND_STRUCTURES, {
-    filter: (s): s is StructureContainer => {
-        if (s.structureType !== STRUCTURE_CONTAINER) return false;
-        if (ControllerContainer && s.id === ControllerContainer.id) return false;
-        return true;
-    }
+  // 0. Obtener todos los links del cuarto
+  const links = room.find(FIND_MY_STRUCTURES, {
+      filter: (s): s is StructureLink => s.structureType === STRUCTURE_LINK
   });
 
-  // 2. Obtener Energía en el suelo
-  const droppedEnergy = creep.room.find(FIND_DROPPED_RESOURCES, {
-    filter: (r) => r.resourceType === RESOURCE_ENERGY
+  // Función auxiliar: ¿Esta posición está pegada (rango 1) a algún link?
+  const isNearLink = (pos: RoomPosition) => {
+      return links.some(link => link.pos.inRangeTo(pos, 1));
+  };
+
+  // 1. Obtener Contenedores Generales del cuarto
+  const roomContainers = room.find(FIND_STRUCTURES, {
+      filter: (s): s is StructureContainer => {
+          if (s.structureType !== STRUCTURE_CONTAINER) return false;
+          if (ControllerContainer && s.id === ControllerContainer.id) return false;
+          if (isNearLink(s.pos)) return false;
+          return true;
+      }
   });
 
-  // 3. Juntar todo en el Map para evitar duplicados (ahora tipado como EnergySource)
+  // 2. Procesar los Power Banks (Convertir Set<string> a objetos reales)
+  const powerBankIds = GetPowersBank();
+  const validPowerBanks: StructureContainer[] = [];
+
+  for (const id of powerBankIds) {
+      const container = Game.getObjectById<StructureContainer>(id as Id<StructureContainer>);
+
+      // 🛑 EL FIX: Validamos que el contenedor esté en el MISMO CUARTO que el creep
+      if (container && container.room.name === creep.room.name && !isNearLink(container.pos)) {
+          validPowerBanks.push(container);
+      }
+  }
+
+  // 3. Obtener Energía en el suelo
+  const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
+      filter: (r) => r.resourceType === RESOURCE_ENERGY && !isNearLink(r.pos)
+  });
+
+  // 4. Juntar todo en el Map para evitar duplicados
   const sourceMap = new Map<Id<EnergySource>, EnergySource>();
-  const allContainers = [...powerBankContainers, ...roomContainers];
 
-  for (const c of allContainers) {
-    if (typeof c !== 'string') {
+  for (const c of validPowerBanks) {
       sourceMap.set(c.id, c);
-    }
+  }
+
+  for (const c of roomContainers) {
+      sourceMap.set(c.id, c);
   }
 
   for (const r of droppedEnergy) {
-    sourceMap.set(r.id, r);
+      sourceMap.set(r.id, r);
   }
 
   const allSources = Array.from(sourceMap.values());
 
-  // 4. ORDENAR POR EL MÁS CERCANO (Como pediste)
+  // 5. ORDENAR POR EL MÁS CERCANO
   return allSources.sort((a, b) => {
-    const distA = creep.pos.getRangeTo(a);
-    const distB = creep.pos.getRangeTo(b);
-    return distA - distB;
+      const distA = creep.pos.getRangeTo(a);
+      const distB = creep.pos.getRangeTo(b);
+      return distA - distB;
   });
-
-  /*
-  // NOTA: Si después prefieres volver a ordenarlos por el que tenga MÁS ENERGÍA, usa esto:
-  return allSources.sort((a, b) => {
-    const energyA = 'amount' in a ? a.amount : a.store.getUsedCapacity(RESOURCE_ENERGY);
-    const energyB = 'amount' in b ? b.amount : b.store.getUsedCapacity(RESOURCE_ENERGY);
-    return energyB - energyA;
-  });
-  */
 }
