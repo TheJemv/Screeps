@@ -1,4 +1,3 @@
-// src/war/managers/WarSpawn.ts
 import { WarCreepMemory } from "../types";
 
 const SQUAD_NAMES = ['Alpha', 'Beta', 'Charlie', 'Delta', 'Echo'];
