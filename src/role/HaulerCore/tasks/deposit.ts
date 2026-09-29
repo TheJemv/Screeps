@@ -1,3 +1,4 @@
+import { AdvancedMove } from "utils/AdvancedMove";
 import { CreepHaulerCore } from "../types";
 import ReservationManager from "../managers/ReservationManager";
 import getClosestEnergyTargets from "../utils/getClosestEnergyTargets";
@@ -50,7 +51,7 @@ export default function(creep: CreepHaulerCore): void {
     if (activeTargetId) {
         const activeTarget = Game.getObjectById(activeTargetId);
         if (activeTarget && !creep.pos.isNearTo(activeTarget)) {
-            creep.moveTo(activeTarget, { visualizePathStyle: { stroke: "#ffffff" } });
+            AdvancedMove.travel(creep, activeTarget, { range: 1, visualizePathStyle: { stroke: "#ffffff" } });
         }
     }
 }

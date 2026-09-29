@@ -15,5 +15,8 @@ roles/Builder/
 ├── README.md              # Documentación del módulo
 └── services/
     ├── parking.ts         # Estacionamiento en banderas ParkingBuilder_
-    ├── collect.ts         # Recolección con reserva dinámica compartida
-    └── build.ts           # Algoritmo de prioridad estricta de construcción
+    ├── collect.ts         # Recolección: si ya trae energía y hay obra a ≤3, construye ahí;
+    │                      # energía tirada solo a ≤3 casillas y ≤4 pasos reales; si no, storage/containers de casa
+    ├── assign.ts          # Reparto de obras (1 vez por tick): cupo por energía comprometida, nunca
+    │                      # saca al que ya trabaja, obras empezadas primero, el par builder-obra más cercano
+    └── build.ts           # Construye la obra asignada; si no hay, repara o se estaciona

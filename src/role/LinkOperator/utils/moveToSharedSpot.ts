@@ -1,3 +1,5 @@
+import { AdvancedMove } from "utils/AdvancedMove";
+
 export default function(creep: Creep, targetA: Structure, targetB: Structure): boolean {
     if (creep.pos.isNearTo(targetA) && creep.pos.isNearTo(targetB)) {
         return true;
@@ -17,7 +19,7 @@ export default function(creep: Creep, targetA: Structure, targetB: Structure): b
                 if (creeps.length > 0 && creeps[0].name !== creep.name) continue;
 
                 // ¡Encontramos el lugar perfecto! Nos movemos hacia allá.
-                creep.moveTo(pos, { visualizePathStyle: { stroke: '#00ffff' } });
+                AdvancedMove.travel(creep, pos, { range: 0, visualizePathStyle: { stroke: '#00ffff' } });
                 return false; // Todavía estamos en camino
             }
         }

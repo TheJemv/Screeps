@@ -15,6 +15,10 @@ export default class ContainerAssigner {
     return claimed;
   }
 
+  private static availableEnergy(source: EnergySource): number {
+    return 'amount' in source ? source.amount : source.store.getUsedCapacity(RESOURCE_ENERGY);
+  }
+
   public static assign(
     creep: CreepHaulerLocal,
     sortedSources: EnergySource[] ,
@@ -23,11 +27,7 @@ export default class ContainerAssigner {
     const claimedIds = this.getClaimedContainerIds(creep.name);
 
     for (const source of sortedSources) {
-      const availableEnergy = 'amount' in source
-        ? source.amount
-        : source.store.getUsedCapacity(RESOURCE_ENERGY);
-
-      if (availableEnergy >= requiredCapacity && !claimedIds.has(source.id)) {
+      if (this.availableEnergy(source) >= requiredCapacity && !claimedIds.has(source.id)) {
         creep.memory.target = source.id;
         return source;
       }
@@ -35,6 +35,18 @@ export default class ContainerAssigner {
 
     creep.memory.target = undefined;
     return null;
+  }
+
+  /** ¿Hay alguna fuente con carga completa que nadie más tomó? Igual que assign, pero sin asignarla. */
+  public static hasAvailable(
+    creep: CreepHaulerLocal,
+    sortedSources: EnergySource[],
+    requiredCapacity: number
+  ): boolean {
+    const claimedIds = this.getClaimedContainerIds(creep.name);
+    return sortedSources.some(
+      (source) => this.availableEnergy(source) >= requiredCapacity && !claimedIds.has(source.id)
+    );
   }
 
   public static clear(creep: CreepHaulerLocal): void {

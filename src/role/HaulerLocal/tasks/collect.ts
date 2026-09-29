@@ -1,6 +1,10 @@
 import { CreepHaulerLocal, CreepHaulerLocalMemory, EnergySource } from '../types';
+import { AdvancedMove } from '../../../utils/AdvancedMove';
+import CacheManager from '../managers/CacheManager';
+import StandbyManager from '../managers/StandbyManager';
 import ContainerAssigner from '../managers/ContainerAssigner';
 import getSortedContainers from '../utils/getSortedContainers'; // Importamos EnergySource
+import { isCachePile } from 'utils/EnergyCache';
 
 export function runCollectTask(creep: CreepHaulerLocal): void {
   // ---------------------------------------------------------------------------
@@ -9,11 +13,12 @@ export function runCollectTask(creep: CreepHaulerLocal): void {
   if(creep.memory.relayTarget) {
     const targetAlly = Game.getObjectById(creep.memory.relayTarget) as CreepHaulerLocal;
 
-    if (targetAlly && targetAlly.memory.state === "DEPOSITING" && targetAlly.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+    // Al que tiene el turno de caché no se le quita la carga: va a la bandera.
+    if (targetAlly && targetAlly.memory.state === "DEPOSITING" && !CacheManager.isOnDuty(targetAlly) && targetAlly.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
       if (creep.pos.isNearTo(targetAlly)) {
         return;
       } else {
-        creep.moveTo(targetAlly, { visualizePathStyle: { stroke: "#00ff00", lineStyle: "dashed" } });
+        AdvancedMove.travel(creep, targetAlly, { range: 1, visualizePathStyle: { stroke: "#00ff00", lineStyle: "dashed" } });
         creep.say('🎯 Interceptando');
         return;
       }
@@ -33,7 +38,8 @@ export function runCollectTask(creep: CreepHaulerLocal): void {
     // Le decimos explícitamente a TypeScript qué tipo de objeto esperamos
     const currentTarget = Game.getObjectById(creep.memory.target) ;
 
-    if (!currentTarget) {
+    // La pila de la caché es para los builders: si la tenía asignada, la suelta.
+    if (!currentTarget || ('amount' in currentTarget && isCachePile(currentTarget))) {
       ContainerAssigner.clear(creep);
     } else {
       // 2. Comprobamos de manera segura cuánta energía tiene
@@ -88,7 +94,7 @@ export function runCollectTask(creep: CreepHaulerLocal): void {
         }
       }
     } else {
-      creep.moveTo(targetSource, { visualizePathStyle: { stroke: '#ffaa00' } });
+      AdvancedMove.travel(creep, targetSource, { range: 1, visualizePathStyle: { stroke: '#ffaa00' } });
     }
   } else {
     // ---------------------------------------------------------------------------
@@ -101,6 +107,7 @@ export function runCollectTask(creep: CreepHaulerLocal): void {
           mem.role === 'HaulerLocal' &&
           mem.state === 'DEPOSITING' && // El compañero viene lleno
           mem.target !== undefined &&   // El compañero planea volver por más energía
+          !mem.cacheDuty &&             // El que va a la caché no se intercepta
           c.store.getUsedCapacity(RESOURCE_ENERGY) > 0
         );
       }
@@ -115,11 +122,12 @@ export function runCollectTask(creep: CreepHaulerLocal): void {
 
       if (furthestAlly) {
         creep.memory.relayTarget = furthestAlly.id;
-        creep.moveTo(furthestAlly, { visualizePathStyle: { stroke: "#00ff00", lineStyle: "dashed" } })
+        AdvancedMove.travel(creep, furthestAlly, { range: 1, visualizePathStyle: { stroke: "#00ff00", lineStyle: "dashed" } })
         creep.say('🤝 Relevo');
       }
     } else {
-      creep.say('💤 Idle');
+      // Nada que recoger ni a quién relevar: se llena en el storage y espera fuera de las roads.
+      StandbyManager.enter(creep);
     }
   }
 }

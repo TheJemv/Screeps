@@ -1,3 +1,5 @@
+import { MINER_FLAG_PREFIX } from "config";
+
 export function GetPowersBank(): Set<string> {
   const minerFlags = _.filter(Game.flags, (f: Flag) => f.name.startsWith("Miner_"));
   const containerIds = new Set<string>();
@@ -49,4 +51,32 @@ export function GetPowersBankRemotes(): StructureContainer[] {
     }
 
     return remoteContainers;
+}
+
+// Casillas con bandera Miner_ ("room:x:y"), recalculadas una vez por tick.
+let minerTilesTick = -1;
+let minerTiles = new Set<string>();
+
+function minerFlagTiles(): Set<string> {
+    if (minerTilesTick !== Game.time) {
+        minerTiles = new Set(
+            _.filter(Game.flags, (f: Flag) => f.name.startsWith(MINER_FLAG_PREFIX)).map(
+                (f: Flag) => `${f.pos.roomName}:${f.pos.x}:${f.pos.y}`
+            )
+        );
+        minerTilesTick = Game.time;
+    }
+    return minerTiles;
+}
+
+/**
+ * ¿Es la obra de un futuro PowerBank? (container sobre una bandera Miner_).
+ * Esos los construye su propio Miner: los builders no deben ayudar.
+ * Usa las banderas y no lookFor, así funciona aunque no haya visión del room.
+ */
+export function isPowerBankSite(site: ConstructionSite): boolean {
+    return (
+        site.structureType === STRUCTURE_CONTAINER &&
+        minerFlagTiles().has(`${site.pos.roomName}:${site.pos.x}:${site.pos.y}`)
+    );
 }

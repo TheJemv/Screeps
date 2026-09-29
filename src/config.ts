@@ -27,13 +27,6 @@ export interface CreepSpawnConfig {
 }
 
 export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
-    // harvester: {
-    //     count: 2,
-    //     // Barato a propósito: rol de rescate, tiene que poder spawnear ya con
-    //     // poca energía disponible. Subile el cupo o el body más adelante si
-    //     // hace falta más músculo una vez que la economía se recupere.
-    //     body: [WORK, CARRY, MOVE] // 200
-    // },
     upgrader: {
         count: 2,
         // Sin WORK -- no upgradea, solo transfer()/withdraw(), que no lo necesitan.
@@ -46,14 +39,14 @@ export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
         body: [WORK, WORK, WORK, WORK, WORK, MOVE, MOVE, MOVE] // 650, satura el source (5x2=10/tick)
     },
     builder: {
-        count: 4,   // 4 - Default
+        count: 3,   // 4 - Default
         // Menos WORK, más CARRY/MOVE que antes -- ahora que ControllerCreep se
         // encarga del upgrade fijo, Builder vuelve a ser más constructor/viajero
         // que fuente de progreso de controller.
         body: [
-            WORK, WORK,
-            CARRY, CARRY, CARRY,
-            MOVE, MOVE, MOVE, MOVE
+            WORK, WORK, // 2 (200e) -> Construye 10 puntos por tick
+            CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, // 6 (300e) -> Carga 300 de energía
+            MOVE, MOVE, MOVE, MOVE // 3 (150e) -> Proporción 2:1 para caminar fluido por carreteras
         ] // 550
     },
     controllercreep: {
@@ -103,6 +96,7 @@ export const CREEPS_CONFIG: Record<string, CreepSpawnConfig> = {
         body: [CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, CARRY, MOVE] // 450
     },
 
+    //  Hauler
     haulerCore: {
         count: 2,
         body: [

@@ -1,3 +1,4 @@
+import { AdvancedMove } from "./AdvancedMove";
 import { GetPowerBankContainers } from "./GetPowerBank";
 
 /**
@@ -33,7 +34,7 @@ export function withdrawFromPowerBank(
 
         if (container && container.store[RESOURCE_ENERGY] >= 50) {
             if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(container); // O usar tu wrapper de movimiento
+                AdvancedMove.travel(creep, container, { range: 1 });
             }
             return true;
         } else {
@@ -75,7 +76,7 @@ export function withdrawFromPowerBank(
     if (closestContainer) {
         creep.memory.targetContainerId = closestContainer.id;
         if (creep.withdraw(closestContainer, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(closestContainer);
+            AdvancedMove.travel(creep, closestContainer, { range: 1 });
         }
         return true;
     }

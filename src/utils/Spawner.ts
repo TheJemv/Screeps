@@ -57,8 +57,6 @@ export function Spawner() {
   const livingHaulerCoreRule = _.filter(Game.creeps, (c: Creep) => c.memory.role === CREEPS_CONFIG.haulerCore.role).length < CREEPS_CONFIG.haulerCore.count
   const livingHaulerLocalRule = _.filter(Game.creeps, (c: Creep) => c.memory.role === CREEPS_CONFIG.haulerLocal.role).length < CREEPS_CONFIG.haulerLocal.count
 
-  console.log(livingRemoteHauler.length, GetPowersBankRemotes().length)
-
   //    If exists flags
   if (livingHaulerCoreRule) {
     const role = CREEPS_CONFIG.haulerCore.role

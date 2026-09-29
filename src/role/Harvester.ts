@@ -1,3 +1,4 @@
+import { AdvancedMove } from "utils/AdvancedMove";
 import { findSpawnStorage } from "utils/FillSpawn";
 import trySpawn from "utils/TrySpawn";
 
@@ -32,7 +33,7 @@ export default {
         if (creep.memory.working) {
             const target = findSpawnStorage(creep);
             if (!target) return;
-            if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) creep.moveTo(target);
+            if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) AdvancedMove.travel(creep, target, { range: 1 });
             return;
         }
 
@@ -44,6 +45,6 @@ export default {
         if (!creep.memory.sourceId) return;
         const source = Game.getObjectById(creep.memory.sourceId);
         if (!source) { delete creep.memory.sourceId; return; }
-        if (creep.harvest(source) === ERR_NOT_IN_RANGE) creep.moveTo(source);
+        if (creep.harvest(source) === ERR_NOT_IN_RANGE) AdvancedMove.travel(creep, source, { range: 1 });
     }
 };

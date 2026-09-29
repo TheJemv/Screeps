@@ -1,6 +1,7 @@
 import { CreepHaulerLocal, EnergySource } from '../types';
 import { GetPowersBank } from 'utils/GetPowerBank';
 import { getControllerContainer } from 'utils/GetControllerContainer';
+import { isCachePile } from 'utils/EnergyCache';
 
 export default function(creep: CreepHaulerLocal): EnergySource[] {
   const room = creep.room;
@@ -39,9 +40,9 @@ export default function(creep: CreepHaulerLocal): EnergySource[] {
       }
   }
 
-  // 3. Obtener Energía en el suelo
+  // 3. Obtener Energía en el suelo (menos la caché de los builders: esa se deja ahí)
   const droppedEnergy = room.find(FIND_DROPPED_RESOURCES, {
-      filter: (r) => r.resourceType === RESOURCE_ENERGY && !isNearLink(r.pos)
+      filter: (r) => r.resourceType === RESOURCE_ENERGY && !isNearLink(r.pos) && !isCachePile(r)
   });
 
   // 4. Juntar todo en el Map para evitar duplicados

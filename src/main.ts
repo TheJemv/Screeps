@@ -16,14 +16,17 @@ import { Spawner } from "utils/Spawner";
 import RemoteHauler from "role/RemoteHauler";
 import Tower from "role/Tower";
 import { stats } from "utils/Stats";
-import { assignBuilderTargets } from "role/Builder/services/dispatch";
+import { assignBuilderTargets } from "role/Builder/services/assign";
 import LinkKeeper from "role/LinkKeeper";
 import HaulerCore from "role/HaulerCore";
 import HaulerLocal from "role/HaulerLocal";
 import LinkOperator from "role/LinkOperator";
 import LinkManager from "role/Link";
 
+import AdvancedMove from "utils/AdvancedMove";
+
 import WarSystem from './war';
+import GuardSystem from './guard';   // ← nueva
 
 // import trySpawn from "utils/TrySpawn";
 
@@ -56,6 +59,7 @@ const ROLES: Record<string, Role> = {
 
 //  Loop
 export const loop = ErrorMapper.wrapLoop(() => {
+  AdvancedMove.run();
   Spawner()
 
   Tower.run();
@@ -73,6 +77,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   LinkManager.run()
 
   WarSystem.run()
+  GuardSystem.run()
 
   // Limpia la memoria de creeps que ya murieron
   for (const name in Memory.creeps) {

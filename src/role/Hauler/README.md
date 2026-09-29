@@ -83,7 +83,9 @@ Previene recargas ineficientes de poco volumen utilizando un estado a nivel de h
 
 ---
 
-## 🏎️ Navegación (`utils/MoveToRoads.ts`)
+## 🏎️ Navegación (`utils/MoveToRoad.ts` → `utils/AdvancedMove`)
+`moveToRoad` es un envoltorio de `AdvancedMove.travel()` (ver `utils/AdvancedMove/README.md`).
+
 * ⚪ **Blanco (`#ffffff`):** Ruta de entrega.
 * 🟠 **Naranja (`#ffaa00`):** Ruta de recolección.
 * 🔘 **Gris (`#777777`):** Desplazamiento a estacionamiento.
